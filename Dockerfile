@@ -10,5 +10,11 @@ RUN mkdir -p /run/radvd
 # Copy default config
 COPY radvd.conf /etc/radvd.conf
 
+# Add entrypoint script to handle runtime directories
+COPY docker-entrypoint.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+
+ENTRYPOINT ["docker-entrypoint.sh"]
+
 # Run radvd in foreground (-n) and log to stderr (-m stderr) so Docker can capture logs
 CMD ["radvd", "-n", "-m", "stderr"]
