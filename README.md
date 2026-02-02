@@ -60,6 +60,8 @@ This allows internal services to bind to static IPv6 addresses while remaining f
 
 This separation restores IPv6 usability without NAT or DHCPv6.
 
+![Architecture](https://neuraldesigns.ca/graphics/radvd-container.svg)
+
 ## Container Image
 
 Available on Docker Hub and GitHub Container Registry:
