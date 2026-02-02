@@ -1,0 +1,90 @@
+name: Check Upstream Updates
+
+on:
+  schedule:
+    # Monthly on the 2nd day at 00:00 UTC
+    - cron: '0 0 2 * *'
+  workflow_dispatch:
+
+jobs:
+  check-and-update:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check Upstream Versions
+        id: check
+        run: |
+          echo "Checking upstream versions..."
+          
+          # Pull latest alpine to get current stable info
+          docker pull alpine:latest
+          
+          # Get Alpine Version
+          ALPINE_VER=$(docker run --rm alpine:latest cat /etc/alpine-release | awk -F. '{print $1"."$2}')
+          echo "Latest Alpine: $ALPINE_VER"
+          
+          # Get radvd Version
+          # apk info output format: "radvd-2.20-r0"
+          RADVD_PKG=$(docker run --rm alpine:latest sh -c "apk update >/dev/null && apk info -e radvd")
+          RADVD_VER=${RADVD_PKG#radvd-}
+          echo "Latest radvd: $RADVD_VER"
+          
+          # Get Local Version
+          LOCAL_VER=$(cat VERSION)
+          echo "Local Version: $LOCAL_VER"
+          
+          if [ "$RADVD_VER" != "$LOCAL_VER" ]; then
+            echo "New version detected!"
+            echo "update=true" >> $GITHUB_OUTPUT
+            echo "alpine_ver=$ALPINE_VER" >> $GITHUB_OUTPUT
+            echo "radvd_ver=$RADVD_VER" >> $GITHUB_OUTPUT
+          else
+            echo "Versions match. No update needed."
+            echo "update=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Update Files
+        if: steps.check.outputs.update == 'true'
+        env:
+          NEW_ALPINE: ${{ steps.check.outputs.alpine_ver }}
+          NEW_RADVD: ${{ steps.check.outputs.radvd_ver }}
+        run: |
+          echo "Updating files to Alpine $NEW_ALPINE and radvd $NEW_RADVD"
+          
+          # Update VERSION
+          echo "$NEW_RADVD" > VERSION
+          
+          # Update Dockerfile (FROM alpine:*)
+          sed -i "s/FROM alpine:.*/FROM alpine:$NEW_ALPINE/" Dockerfile
+          
+          # Update README.md
+          # Update Project Version
+          sed -i "s/- \*\*Project Version\*\*: .*/- **Project Version**: $NEW_RADVD/" README.md
+          # Update OS Version
+          sed -i "s/- \*\*OS\*\*: Alpine Linux .*/- **OS**: Alpine Linux $NEW_ALPINE/" README.md
+          # Update Software Version
+          sed -i "s/- \*\*Software\*\*: radvd .*/- **Software**: radvd $NEW_RADVD/" README.md
+
+      - name: Commit and Push Release
+        if: steps.check.outputs.update == 'true'
+        env:
+          NEW_VER: ${{ steps.check.outputs.radvd_ver }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          
+          git add VERSION Dockerfile README.md
+          git commit -m "chore(release): update to radvd $NEW_VER"
+          
+          # Create tag
+          git tag "v$NEW_VER"
+          
+          # Push commit and tag
+          git push origin main --tags
