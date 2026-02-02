@@ -13,7 +13,7 @@ This guide provides step-by-step instructions to verify the deployment of the `r
 
 ```bash
 # 1. Pull the image
-docker pull udp1024/radvd-alpine:2.20
+docker pull udp1024/radvd-alpine:latest
 
 # 2. Run the container (Foreground mode to see logs)
 # We use --net=host and caps, but for a simple version check or config check, we can omit them if just checking binary presence.
@@ -22,7 +22,7 @@ docker run --rm --name radvd-hub \
   --net=host \
   --cap-add=NET_ADMIN \
   --cap-add=NET_RAW \
-  udp1024/radvd-alpine:2.20
+  udp1024/radvd-alpine:latest
 
 # EXPECTED OUTPUT:
 # [date] radvd (1): version 2.20 started
@@ -37,14 +37,14 @@ docker run --rm --name radvd-hub \
 
 ```bash
 # 1. Pull the image
-docker pull ghcr.io/udp1024/radvd-container:2.20
+docker pull ghcr.io/udp1024/radvd-container:latest
 
 # 2. Run the container
 docker run --rm --name radvd-ghcr \
   --net=host \
   --cap-add=NET_ADMIN \
   --cap-add=NET_RAW \
-  ghcr.io/udp1024/radvd-container:2.20
+  ghcr.io/udp1024/radvd-container:latest
 
 # EXPECTED OUTPUT:
 # Same as above.
@@ -72,7 +72,7 @@ docker run --rm \
   --cap-add=NET_ADMIN \
   --cap-add=NET_RAW \
   -v $(pwd)/test_radvd.conf:/etc/radvd.conf \
-  udp1024/radvd-alpine:2.20 \
+  udp1024/radvd-alpine:latest \
   radvd -c -d 1
 
 # EXPECTED OUTPUT:
@@ -84,7 +84,7 @@ docker run --rm \
 If you have an `arm64` device (like a Raspberry Pi or Apple Silicon Mac), running the above commands will automatically pull the `arm64` variant. You can inspect the image to see supported architectures:
 
 ```bash
-docker manifest inspect udp1024/radvd-alpine:2.20
+docker manifest inspect udp1024/radvd-alpine:latest
 ```
 
 **Expected Output**: JSON showing platforms `linux/amd64` and `linux/arm64`.

@@ -12,10 +12,27 @@ This container provides a IPv6 Router Advertisement Daemon to advertise IPv6 pre
 
 ## Usage
 
-### basic Run
+### Basic Run
+
+**Docker Hub:**
 
 ```bash
-docker run --name radvd --net=host --cap-add=NET_ADMIN --cap-add=NET_RAW radvd-container
+docker run --name radvd \
+  --net=host \
+  --cap-add=NET_ADMIN \
+  --cap-add=NET_RAW \
+  udp1024/radvd-alpine:latest
+```
+
+**GitHub Container Registry:**
+
+```bash
+docker pull ghcr.io/udp1024/radvd-container:latest
+docker run --name radvd \
+  --net=host \
+  --cap-add=NET_ADMIN \
+  --cap-add=NET_RAW \
+  ghcr.io/udp1024/radvd-container:latest
 ```
 
 *Note: `--net=host`, `--cap-add=NET_ADMIN` and `--cap-add=NET_RAW` are required. Radvd needs to run as root on the host network interface to open raw sockets for sending ICMPv6 router advertisements.*
@@ -32,8 +49,8 @@ docker run -d \
   --net=host \
   --cap-add=NET_ADMIN \
   --cap-add=NET_RAW \
-  -v $(pwd)/my-radvd.conf:/etc/radvd.conf \
-  radvd-container
+  -v $(pwd)/radvd.conf:/etc/radvd.conf \
+  udp1024/radvd-alpine:latest
 ```
 
 ## Contributing
