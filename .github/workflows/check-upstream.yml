@@ -31,9 +31,11 @@ jobs:
           echo "Latest Alpine: $ALPINE_VER"
           
           # Get radvd Version
-          # apk info output format: "radvd-2.20-r0"
-          RADVD_PKG=$(docker run --rm alpine:latest sh -c "apk update >/dev/null && apk info -e radvd")
-          RADVD_VER=${RADVD_PKG#radvd-}
+          # apk list output format: "radvd-2.20-r0 x86_64 ..."
+          RADVD_PKG=$(docker run --rm alpine:latest sh -c "apk update >/dev/null && apk list radvd" | awk '{print $1}')
+          RADVD_PKG_VER=${RADVD_PKG#radvd-}
+          RADVD_VER=${RADVD_PKG_VER%-r*}
+          echo "Latest radvd package: $RADVD_PKG_VER"
           echo "Latest radvd: $RADVD_VER"
           
           # Get Local Version
@@ -45,6 +47,7 @@ jobs:
             echo "update=true" >> $GITHUB_OUTPUT
             echo "alpine_ver=$ALPINE_VER" >> $GITHUB_OUTPUT
             echo "radvd_ver=$RADVD_VER" >> $GITHUB_OUTPUT
+            echo "radvd_pkg_ver=$RADVD_PKG_VER" >> $GITHUB_OUTPUT
           else
             echo "Versions match. No update needed."
             echo "update=false" >> $GITHUB_OUTPUT
@@ -55,8 +58,9 @@ jobs:
         env:
           NEW_ALPINE: ${{ steps.check.outputs.alpine_ver }}
           NEW_RADVD: ${{ steps.check.outputs.radvd_ver }}
+          NEW_RADVD_PKG: ${{ steps.check.outputs.radvd_pkg_ver }}
         run: |
-          echo "Updating files to Alpine $NEW_ALPINE and radvd $NEW_RADVD"
+          echo "Updating files to Alpine $NEW_ALPINE and radvd $NEW_RADVD (package: $NEW_RADVD_PKG)"
           
           # Update VERSION
           echo "$NEW_RADVD" > VERSION
@@ -66,11 +70,11 @@ jobs:
           
           # Update README.md
           # Update Project Version
-          sed -i "s/- \*\*Project Version\*\*: .*/- **Project Version**: $NEW_RADVD/" README.md
+          sed -i "s/[-*] \*\*Project Version\*\*: .*/\* **Project Version**: $NEW_RADVD/" README.md
           # Update OS Version
-          sed -i "s/- \*\*OS\*\*: Alpine Linux .*/- **OS**: Alpine Linux $NEW_ALPINE/" README.md
+          sed -i "s/[-*] \*\*OS\*\*: Alpine Linux .*/\* **OS**: Alpine Linux $NEW_ALPINE/" README.md
           # Update Software Version
-          sed -i "s/- \*\*Software\*\*: radvd .*/- **Software**: radvd $NEW_RADVD/" README.md
+          sed -i "s/[-*] \*\*Software\*\*: radvd .*/\* **Software**: radvd $NEW_RADVD_PKG/" README.md
 
       - name: Commit and Push Release
         if: steps.check.outputs.update == 'true'
