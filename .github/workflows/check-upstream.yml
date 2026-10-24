@@ -11,12 +11,16 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+    outputs:
+      update: ${{ steps.check.outputs.update }}
+      radvd_ver: ${{ steps.check.outputs.radvd_ver }}
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          token: ${{ secrets.GH_PAT || secrets.GITHUB_TOKEN }}
 
       - name: Check Upstream Versions
         id: check
@@ -92,3 +96,12 @@ jobs:
           
           # Push commit and tag
           git push origin main --tags
+
+  publish:
+    needs: check-and-update
+    if: needs.check-and-update.outputs.update == 'true'
+    uses: ./.github/workflows/publish.yml
+    with:
+      ref: main
+    secrets: inherit
+
